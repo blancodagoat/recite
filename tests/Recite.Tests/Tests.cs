@@ -32,6 +32,13 @@ Eq("lines trim and join", Ocr.JoinLines(["  hello ", "world  "]), $"hello{Enviro
 Eq("empty input joins to empty", Ocr.JoinLines([]), "");
 Eq("outer blanks trimmed", Ocr.JoinLines(["", "text", ""]).Trim(), "text");
 
+// Token repair: the engine's O/0 and l/1 confusions inside code-like tokens
+Eq("hex prefix repaired", Ocr.RepairTokens("error Ox80070005 denied"), "error 0x80070005 denied");
+Eq("zero inside digits repaired", Ocr.RepairTokens("port 8O80"), "port 8080");
+Eq("one inside digits repaired", Ocr.RepairTokens("v1.l0.3"), "v1.10.3");
+Eq("prose untouched", Ocr.RepairTokens("Only Ill Officers"), "Only Ill Officers");
+Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
+
 // Update check parsing
 {
     const string releases = """
@@ -63,6 +70,22 @@ Eq("outer blanks trimmed", Ocr.JoinLines(["", "text", ""]).Trim(), "text");
     {
         string text = await Ocr.Read(bitmap);
         Check("ocr reads rendered text", text.Contains("quick brown fox", StringComparison.OrdinalIgnoreCase), text);
+
+        // The hard case: small 10pt UI text with a hex token, which needs both the
+        // upscale pass (else the token drops) and token repair (the engine reads the
+        // leading zero as a capital O below 16pt). 8pt and below is genuinely outside
+        // the engine's reliable envelope, upscaled or not, on any tool built on it.
+        using var small = new Bitmap(360, 44);
+        using (var g = Graphics.FromImage(small))
+        {
+            g.Clear(Color.White);
+            g.TextRenderingHint = TextRenderingHint.AntiAlias;
+            using var font = new Font("Segoe UI", 10f);
+            g.DrawString("error code 0x80070005 access denied", font, Brushes.Black, 4, 12);
+        }
+
+        string tiny = await Ocr.Read(small);
+        Check("ocr reads small text via upscale and repair", tiny.Contains("0x80070005"), tiny);
     }
     catch (InvalidOperationException)
     {
