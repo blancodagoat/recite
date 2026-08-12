@@ -8,6 +8,7 @@ internal sealed class ConfigFile
 {
     public string? GrabHotkey { get; set; }
     public bool? UseWindows11Ocr { get; set; }
+    public bool? UpdateNotify { get; set; }
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
@@ -26,6 +27,9 @@ internal sealed class AppConfig
 
     /// <summary>True when no config existed on disk — the app's very first launch.</summary>
     public bool FirstRun { get; private set; }
+
+    /// <summary>Opt-in background update notifications. Off = never phones home.</summary>
+    public bool UpdateNotify { get; set; }
 
     /// <summary>
     /// Never throws. Anything unreadable or malformed collapses to defaults, and the
@@ -47,7 +51,8 @@ internal sealed class AppConfig
                 {
                     config.GrabHotkey = hotkey;
                     config.UseWindows11Ocr = file.UseWindows11Ocr ?? true;
-                    rewrite = file.UseWindows11Ocr is null;
+                    config.UpdateNotify = file.UpdateNotify ?? false;
+                    rewrite = file.UseWindows11Ocr is null || file.UpdateNotify is null;
                 }
             }
         }
@@ -69,7 +74,12 @@ internal sealed class AppConfig
         try
         {
             Directory.CreateDirectory(AppInfo.DataDirectory);
-            var file = new ConfigFile { GrabHotkey = GrabHotkey.ToString(), UseWindows11Ocr = UseWindows11Ocr };
+            var file = new ConfigFile
+            {
+                GrabHotkey = GrabHotkey.ToString(),
+                UseWindows11Ocr = UseWindows11Ocr,
+                UpdateNotify = UpdateNotify,
+            };
             File.WriteAllText(
                 AppInfo.ConfigPath, JsonSerializer.Serialize(file, ConfigJsonContext.Default.ConfigFile));
         }
