@@ -4,7 +4,7 @@
     "homepage": "https://github.com/blancodagoat/recite",
     "license": "MIT",
     "url": "https://github.com/blancodagoat/recite/releases/download/v1.1.0/Recite.exe",
-    "hash": "FILL-AFTER-FIRST-TAGGED-RELEASE (scoop hash Recite.exe)",
+    "hash": "d94c8114679e5b2ff58b8e5e8d41ef88fee2fe99ace6444d9ee69d88e3c156e6",
     "bin": "Recite.exe",
     "shortcuts": [
         [
