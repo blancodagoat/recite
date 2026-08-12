@@ -24,6 +24,7 @@
     <Compile Include="..\..\src\Recite\Ocr.cs" />
     <Compile Include="..\..\src\Recite\OneOcr.cs" />
     <Compile Include="..\..\src\Recite\UpdateCheck.cs" />
+    <Compile Include="..\..\src\Recite\IssueReport.cs" />
   </ItemGroup>
 
 </Project>
