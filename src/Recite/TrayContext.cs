@@ -17,6 +17,7 @@ internal sealed class TrayContext : ApplicationContext
     public TrayContext(SingleInstance instance)
     {
         config = AppConfig.Load();
+        OneOcr.Enabled = config.ExperimentalOneOcr;
         StartupRegistry.Repair();
         if (config.FirstRun)
         {

@@ -68,8 +68,19 @@ Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
 
     try
     {
+        Check("OneOCR is off by default", !OneOcr.Available);
+        OneOcr.Enabled = true;
+        Console.WriteLine($"engine when opted in: {(OneOcr.Available ? "OneOCR (staged from package)" : "legacy (OneOCR not ready on this box)")}");
+        OneOcr.Enabled = false;
+
         string text = await Ocr.Read(bitmap);
         Check("ocr reads rendered text", text.Contains("quick brown fox", StringComparison.OrdinalIgnoreCase), text);
+
+        // Both engines stay covered: the same sentence must also survive the legacy path.
+        Ocr.ForceLegacy = true;
+        string legacy = await Ocr.Read(bitmap);
+        Ocr.ForceLegacy = false;
+        Check("legacy engine also reads it", legacy.Contains("quick brown fox", StringComparison.OrdinalIgnoreCase), legacy);
 
         // The hard case: small 10pt UI text with a hex token, which needs both the
         // upscale pass (else the token drops) and token repair (the engine reads the

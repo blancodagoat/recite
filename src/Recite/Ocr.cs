@@ -11,9 +11,27 @@ namespace Recite;
 /// </summary>
 internal static class Ocr
 {
+    /// <summary>Test hook: forces the legacy engine so both paths stay covered.</summary>
+    internal static bool ForceLegacy;
+
     /// <summary>Recognizes text in the bitmap. Empty string when nothing was found.</summary>
     public static async Task<string> Read(Bitmap bitmap)
     {
+        // The newer model from the Snipping Tool package wins when it's present and
+        // healthy; it reads small text and code tokens the legacy engine fumbles. Any
+        // failure inside it falls straight through to the legacy path.
+        if (!ForceLegacy && OneOcr.Available)
+        {
+            try
+            {
+                return JoinLines(OneOcr.Read(bitmap));
+            }
+            catch (Exception ex)
+            {
+                AppLog.Write("OneOCR read failed, using legacy engine: " + ex.Message);
+            }
+        }
+
         var engine = OcrEngine.TryCreateFromUserProfileLanguages()
             ?? OcrEngine.TryCreateFromLanguage(new Windows.Globalization.Language("en-US"))
             ?? throw new InvalidOperationException(

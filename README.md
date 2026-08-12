@@ -44,6 +44,7 @@ Recite reads with the engine that ships in Windows 10 and 11, in whatever langua
 - The app never phones home. The update check in the tray menu runs only when you click it.
 - Config lives in `%APPDATA%\Recite\config.json`, and a small rolling log in the same folder records what the app did.
 - Requires Windows 10 2004 or later with at least one language pack (OCR comes with them).
+- Windows 11 ships a newer, sharper OCR model inside Snipping Tool and Photos. Recite can load it (set `experimentalOneOcr` to true in config), but it is off by default while its recognition path is still being finished; the shipping engine is the stable built-in one.
 
 </details>
 
