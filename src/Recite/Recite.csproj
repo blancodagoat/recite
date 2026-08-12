@@ -11,7 +11,7 @@
     <AssemblyName>Recite</AssemblyName>
     <RootNamespace>Recite</RootNamespace>
     <Product>Recite</Product>
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
     <InvariantGlobalization>true</InvariantGlobalization>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
