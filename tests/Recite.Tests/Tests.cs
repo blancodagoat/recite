@@ -39,6 +39,11 @@ Eq("one inside digits repaired", Ocr.RepairTokens("v1.l0.3"), "v1.10.3");
 Eq("prose untouched", Ocr.RepairTokens("Only Ill Officers"), "Only Ill Officers");
 Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
 
+// Download-copy suffix stripping ("Recite (2).exe" from browser re-downloads).
+Eq("copy suffix stripped", SelfTidy.StripCopySuffix("Recite (3)"), "Recite");
+Eq("clean name untouched", SelfTidy.StripCopySuffix("Recite"), "Recite");
+Eq("inner parentheses survive", SelfTidy.StripCopySuffix("My (old) App (2)"), "My (old) App");
+
 // Update check parsing
 {
     const string releases = """

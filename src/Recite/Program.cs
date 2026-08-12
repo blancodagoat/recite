@@ -12,6 +12,8 @@ internal static class Program
             return;
         }
 
+        SelfTidy.Run();
+
         ApplicationConfiguration.Initialize();
 
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
