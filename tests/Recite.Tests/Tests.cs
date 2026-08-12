@@ -121,5 +121,19 @@ Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
     }
 }
 
+// Issue reporting: the prefilled new-issue URL must scrub identity and stay under
+// GitHub's URL limit no matter how large the log tail is.
+{
+    var url = IssueReport.BuildUrl(
+        "Couldn't read text", "v1.0 · Windows 10.0.26200",
+        @"2026-08-12 grab failed: C:\Users\casey\file.png", @"C:\Users\casey", "casey");
+    Check("issue url targets the repo", url.StartsWith(AppInfo.GitHubUrl + "/issues/new?title="));
+    Check("issue url carries the log", url.Contains(Uri.EscapeDataString("file.png")));
+    Check("issue url leaks no username", !url.Contains("casey", StringComparison.OrdinalIgnoreCase));
+
+    var huge = IssueReport.BuildUrl("t", "e", new string('x', 100_000), @"C:\Users\casey", "casey");
+    Check("huge log tail stays under GitHub's URL limit", huge.Length < 8_000, $"{huge.Length} chars");
+}
+
 Console.WriteLine($"{passed} passed, {failed} failed");
 return failed == 0 ? 0 : 1;

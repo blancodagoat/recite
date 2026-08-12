@@ -49,6 +49,14 @@ internal sealed class TrayContext : ApplicationContext
             ContextMenuStrip = BuildMenu(),
         };
         tray.DoubleClick += (_, _) => Grab();
+        tray.BalloonTipClicked += (_, _) =>
+        {
+            if (pendingReport is { } report)
+            {
+                pendingReport = null;
+                IssueReport.Open(report);
+            }
+        };
 
         if (!hotkeyOk)
         {
@@ -162,7 +170,7 @@ internal sealed class TrayContext : ApplicationContext
         catch (Exception ex)
         {
             AppLog.Write("grab failed: " + ex.Message);
-            Balloon("Couldn't read text", ex.Message, ToolTipIcon.Error);
+            FailureBalloon("Couldn't read text", ex.Message, ToolTipIcon.Error);
         }
         finally
         {
@@ -220,8 +228,25 @@ internal sealed class TrayContext : ApplicationContext
         hotkeyDialog.Show();
     }
 
-    private void Balloon(string title, string text, ToolTipIcon icon) =>
+    private string? pendingReport;
+
+    private void Balloon(string title, string text, ToolTipIcon icon)
+    {
+        // Any newer balloon supersedes a pending report, so a click on "Copied" can
+        // never open an issue page.
+        pendingReport = null;
         tray.ShowBalloonTip(4000, title, text, icon);
+    }
+
+    /// <summary>
+    /// A failure balloon whose click opens a prefilled GitHub issue in the browser —
+    /// the user reviews and submits it there, or closes the tab; the app sends nothing.
+    /// </summary>
+    private void FailureBalloon(string title, string text, ToolTipIcon icon)
+    {
+        Balloon(title, text + " Click to report this on GitHub.", icon);
+        pendingReport = title;
+    }
 
     protected override void Dispose(bool disposing)
     {
