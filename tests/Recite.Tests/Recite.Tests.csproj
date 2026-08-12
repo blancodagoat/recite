@@ -19,6 +19,7 @@
     <Compile Include="..\..\src\Recite\Native.cs" />
     <Compile Include="..\..\src\Recite\HotkeyBinding.cs" />
     <Compile Include="..\..\src\Recite\AppInfo.cs" />
+    <Compile Include="..\..\src\Recite\SelfTidy.cs" />
     <Compile Include="..\..\src\Recite\AppConfig.cs" />
     <Compile Include="..\..\src\Recite\AppLog.cs" />
     <Compile Include="..\..\src\Recite\Ocr.cs" />
