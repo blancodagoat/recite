@@ -10,6 +10,8 @@
 
 `one exe` · `works offline` · `no account` · `no uploads` · `no telemetry`
 
+<img src="assets/screenshot.png" width="760" alt="An error dialog that blocks selection, and the Copied notification showing its text on the clipboard">
+
 </div>
 
 ---
