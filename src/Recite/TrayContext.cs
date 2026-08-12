@@ -17,7 +17,13 @@ internal sealed class TrayContext : ApplicationContext
     public TrayContext(SingleInstance instance)
     {
         config = AppConfig.Load();
-        OneOcr.Enabled = config.ExperimentalOneOcr;
+        OneOcr.Enabled = config.UseWindows11Ocr;
+        // Stage and load the OCR model now, off the UI thread, so the first grab is snappy.
+        if (OneOcr.Enabled)
+        {
+            Task.Run(OneOcr.WarmUp);
+        }
+
         StartupRegistry.Repair();
         if (config.FirstRun)
         {

@@ -68,10 +68,27 @@ Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
 
     try
     {
-        Check("OneOCR is off by default", !OneOcr.Available);
-        OneOcr.Enabled = true;
-        Console.WriteLine($"engine when opted in: {(OneOcr.Available ? "OneOCR (staged from package)" : "legacy (OneOCR not ready on this box)")}");
-        OneOcr.Enabled = false;
+        // OneOCR is on by default and reads when the package is present. When it can't
+        // load (no package on this box), Available is false and everything falls to the
+        // legacy engine — both outcomes are correct, so the assertions below use whichever
+        // engine actually answered.
+        Console.WriteLine($"engine: {(OneOcr.Available ? "OneOCR (Windows 11 model)" : "legacy Windows.Media.Ocr")}");
+        if (OneOcr.Available)
+        {
+            // A small one-line hex grab, padded below the engine's size floor: the exact
+            // case the completed ABI + padding now handle natively.
+            using var hex = new Bitmap(300, 18);
+            using (var g = Graphics.FromImage(hex))
+            {
+                g.Clear(Color.White);
+                g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                using var f = new Font("Segoe UI", 9f);
+                g.DrawString("error 0x80070005 denied", f, Brushes.Black, 1, 0);
+            }
+
+            string hexText = Ocr.JoinLines(OneOcr.Read(hex));
+            Check("OneOCR reads a small hex grab natively", hexText.Contains("0x80070005"), hexText);
+        }
 
         string text = await Ocr.Read(bitmap);
         Check("ocr reads rendered text", text.Contains("quick brown fox", StringComparison.OrdinalIgnoreCase), text);
@@ -86,8 +103,8 @@ Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
         // upscale pass (else the token drops) and token repair (the engine reads the
         // leading zero as a capital O below 16pt). 8pt and below is genuinely outside
         // the engine's reliable envelope, upscaled or not, on any tool built on it.
-        using var small = new Bitmap(360, 44);
-        using (var g = Graphics.FromImage(small))
+        using var smallUi = new Bitmap(360, 44);
+        using (var g = Graphics.FromImage(smallUi))
         {
             g.Clear(Color.White);
             g.TextRenderingHint = TextRenderingHint.AntiAlias;
@@ -95,7 +112,7 @@ Eq("IPv4 untouched", Ocr.RepairTokens("IPv4 address"), "IPv4 address");
             g.DrawString("error code 0x80070005 access denied", font, Brushes.Black, 4, 12);
         }
 
-        string tiny = await Ocr.Read(small);
+        string tiny = await Ocr.Read(smallUi);
         Check("ocr reads small text via upscale and repair", tiny.Contains("0x80070005"), tiny);
     }
     catch (InvalidOperationException)

@@ -18,14 +18,18 @@ internal static unsafe class OneOcr
     private static long pipeline;
     private static long processOptions;
 
+    // Every handle, count and index in this API is a 64-bit value. Declaring any of them
+    // as int32 leaves garbage in the upper half of the argument register (or overflows an
+    // output buffer), which the engine reports as a generic 0x3 — the bug that made the
+    // recognition call fail while load and pipeline creation succeeded.
     private static delegate* unmanaged[Cdecl]<long*, long> createInitOptions;
-    private static delegate* unmanaged[Cdecl]<long, int, long> setDelayLoad;
+    private static delegate* unmanaged[Cdecl]<long, byte, long> setDelayLoad;
     private static delegate* unmanaged[Cdecl]<byte*, byte*, long, long*, long> createPipeline;
     private static delegate* unmanaged[Cdecl]<long*, long> createProcessOptions;
-    private static delegate* unmanaged[Cdecl]<long, int, long> setMaxLineCount;
+    private static delegate* unmanaged[Cdecl]<long, long, long> setMaxLineCount;
     private static delegate* unmanaged[Cdecl]<long, RawImage*, long, long*, long> runPipeline;
-    private static delegate* unmanaged[Cdecl]<long, int*, long> getLineCount;
-    private static delegate* unmanaged[Cdecl]<long, int, long*, long> getLine;
+    private static delegate* unmanaged[Cdecl]<long, long*, long> getLineCount;
+    private static delegate* unmanaged[Cdecl]<long, long, long*, long> getLine;
     private static delegate* unmanaged[Cdecl]<long, byte**, long> getLineContent;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -40,14 +44,20 @@ internal static unsafe class OneOcr
     }
 
     /// <summary>
-    /// Opt-in until the recognition ABI is finished. The staging and load path is proven
-    /// (the engine loads out of the Photos/Snipping package), but RunOcrPipeline still
-    /// returns a struct-layout error, so leaving this on by default would make every grab
-    /// pay a failed call before falling back. Flip <c>experimentalOneOcr</c> in config to
-    /// exercise it. ponytail: finish the RawImage/RunOcrPipeline ABI against a reference
-    /// implementation, then default this on with the same silent fallback.
+    /// On by default; the config flag turns it off to force the legacy engine. When the
+    /// package is present the newer model reads small text and code tokens the legacy
+    /// engine fumbles, and any failure (package absent, exports changed, recognition
+    /// error) falls through silently, so there is no downside to leaving it on.
     /// </summary>
-    public static bool Enabled { get; set; }
+    public static bool Enabled { get; set; } = true;
+
+    /// <summary>BGRA pixel-format code in the image descriptor, calibrated against the
+    /// engine (0 and 4/5 error; 1 and 3 both work; 3 is the canonical value).</summary>
+    private const int ImageType = 3;
+
+    /// <summary>Triggers staging and load ahead of the first grab. Call on a worker
+    /// thread at startup so the one-time ~100 MB copy never blocks a grab.</summary>
+    public static void WarmUp() => _ = Available;
 
     public static bool Available
     {
@@ -79,8 +89,36 @@ internal static unsafe class OneOcr
         }
     }
 
+    // The engine rejects images below roughly 50px in a dimension (returns 0x3), and a
+    // one-line grab of UI text is often shorter, so anything smaller is padded onto a
+    // white canvas that clears the floor with margin. Padding, not scaling — glyph sizes
+    // stay exact, the white border is ignored by recognition.
+    private const int MinDimension = 64;
+
     /// <summary>Recognized lines, top to bottom. Caller must have checked <see cref="Available"/>.</summary>
     public static List<string> Read(Bitmap bitmap)
+    {
+        Bitmap? padded = null;
+        if (bitmap.Width < MinDimension || bitmap.Height < MinDimension)
+        {
+            padded = new Bitmap(Math.Max(bitmap.Width, MinDimension), Math.Max(bitmap.Height, MinDimension));
+            using var g = Graphics.FromImage(padded);
+            g.Clear(Color.White);
+            g.DrawImageUnscaled(bitmap, 0, 0);
+            bitmap = padded;
+        }
+
+        try
+        {
+            return ReadCore(bitmap);
+        }
+        finally
+        {
+            padded?.Dispose();
+        }
+    }
+
+    private static List<string> ReadCore(Bitmap bitmap)
     {
         // BGRA rows straight out of the GDI bitmap; no encode/decode round trip.
         var bounds = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
@@ -89,7 +127,7 @@ internal static unsafe class OneOcr
         {
             var image = new RawImage
             {
-                Type = 3,
+                Type = ImageType,
                 Columns = bitmap.Width,
                 Rows = bitmap.Height,
                 Step = data.Stride,
@@ -101,9 +139,9 @@ internal static unsafe class OneOcr
             {
                 long instance;
                 Check(runPipeline(pipeline, &image, processOptions, &instance));
-                int count;
+                long count;
                 Check(getLineCount(instance, &count));
-                for (int i = 0; i < count; i++)
+                for (long i = 0; i < count; i++)
                 {
                     long line;
                     if (getLine(instance, i, &line) != 0 || line == 0)
@@ -155,18 +193,18 @@ internal static unsafe class OneOcr
 
         var library = NativeLibrary.Load(dllPath);
         createInitOptions = (delegate* unmanaged[Cdecl]<long*, long>)Export(library, "CreateOcrInitOptions");
-        setDelayLoad = (delegate* unmanaged[Cdecl]<long, int, long>)Export(library, "OcrInitOptionsSetUseModelDelayLoad");
+        setDelayLoad = (delegate* unmanaged[Cdecl]<long, byte, long>)Export(library, "OcrInitOptionsSetUseModelDelayLoad");
         createPipeline = (delegate* unmanaged[Cdecl]<byte*, byte*, long, long*, long>)Export(library, "CreateOcrPipeline");
         createProcessOptions = (delegate* unmanaged[Cdecl]<long*, long>)Export(library, "CreateOcrProcessOptions");
-        setMaxLineCount = (delegate* unmanaged[Cdecl]<long, int, long>)Export(library, "OcrProcessOptionsSetMaxRecognitionLineCount");
+        setMaxLineCount = (delegate* unmanaged[Cdecl]<long, long, long>)Export(library, "OcrProcessOptionsSetMaxRecognitionLineCount");
         runPipeline = (delegate* unmanaged[Cdecl]<long, RawImage*, long, long*, long>)Export(library, "RunOcrPipeline");
-        getLineCount = (delegate* unmanaged[Cdecl]<long, int*, long>)Export(library, "GetOcrLineCount");
-        getLine = (delegate* unmanaged[Cdecl]<long, int, long*, long>)Export(library, "GetOcrLine");
+        getLineCount = (delegate* unmanaged[Cdecl]<long, long*, long>)Export(library, "GetOcrLineCount");
+        getLine = (delegate* unmanaged[Cdecl]<long, long, long*, long>)Export(library, "GetOcrLine");
         getLineContent = (delegate* unmanaged[Cdecl]<long, byte**, long>)Export(library, "GetOcrLineContent");
 
         long init;
         Check(createInitOptions(&init));
-        Check(setDelayLoad(init, 0));
+        Check(setDelayLoad(init, 0));  // load the model now, not lazily
 
         // The model refuses to load without this exact key; it is baked into the DLL and
         // documented by every open-source integration of this engine.

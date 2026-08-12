@@ -7,7 +7,7 @@ namespace Recite;
 internal sealed class ConfigFile
 {
     public string? GrabHotkey { get; set; }
-    public bool? ExperimentalOneOcr { get; set; }
+    public bool? UseWindows11Ocr { get; set; }
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
@@ -20,9 +20,9 @@ internal sealed class AppConfig
 {
     public HotkeyBinding GrabHotkey { get; set; } = HotkeyBinding.DefaultGrab;
 
-    /// <summary>Opt-in to the Windows 11 Snipping Tool OCR model. Off until its ABI is
-    /// finished; see <see cref="OneOcr"/>.</summary>
-    public bool ExperimentalOneOcr { get; set; }
+    /// <summary>Use the sharper Windows 11 OCR model when its package is present. On by
+    /// default; set false to force the built-in engine. See <see cref="OneOcr"/>.</summary>
+    public bool UseWindows11Ocr { get; set; } = true;
 
     /// <summary>True when no config existed on disk — the app's very first launch.</summary>
     public bool FirstRun { get; private set; }
@@ -46,8 +46,8 @@ internal sealed class AppConfig
                 if (file is not null && HotkeyBinding.TryParse(file.GrabHotkey, out var hotkey))
                 {
                     config.GrabHotkey = hotkey;
-                    config.ExperimentalOneOcr = file.ExperimentalOneOcr ?? false;
-                    rewrite = file.ExperimentalOneOcr is null;
+                    config.UseWindows11Ocr = file.UseWindows11Ocr ?? true;
+                    rewrite = file.UseWindows11Ocr is null;
                 }
             }
         }
@@ -69,7 +69,7 @@ internal sealed class AppConfig
         try
         {
             Directory.CreateDirectory(AppInfo.DataDirectory);
-            var file = new ConfigFile { GrabHotkey = GrabHotkey.ToString(), ExperimentalOneOcr = ExperimentalOneOcr };
+            var file = new ConfigFile { GrabHotkey = GrabHotkey.ToString(), UseWindows11Ocr = UseWindows11Ocr };
             File.WriteAllText(
                 AppInfo.ConfigPath, JsonSerializer.Serialize(file, ConfigJsonContext.Default.ConfigFile));
         }

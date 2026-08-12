@@ -24,7 +24,8 @@ internal static class Ocr
         {
             try
             {
-                return JoinLines(OneOcr.Read(bitmap));
+                // Recognition is synchronous CPU work; keep it off the UI thread.
+                return await Task.Run(() => JoinLines(OneOcr.Read(bitmap)));
             }
             catch (Exception ex)
             {
