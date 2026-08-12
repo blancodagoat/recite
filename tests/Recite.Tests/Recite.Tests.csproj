@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Recite.Tests</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Tests.cs" />
+    <!-- The production sources under test, compiled in directly rather than duplicated. -->
+    <Compile Include="..\..\src\Recite\Native.cs" />
+    <Compile Include="..\..\src\Recite\HotkeyBinding.cs" />
+    <Compile Include="..\..\src\Recite\AppInfo.cs" />
+    <Compile Include="..\..\src\Recite\AppConfig.cs" />
+    <Compile Include="..\..\src\Recite\AppLog.cs" />
+    <Compile Include="..\..\src\Recite\Ocr.cs" />
+    <Compile Include="..\..\src\Recite\UpdateCheck.cs" />
+  </ItemGroup>
+
+</Project>
