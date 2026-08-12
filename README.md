@@ -24,6 +24,8 @@
 
 That's the entire app. Error dialogs that block selection, hardcoded subtitles, code in a YouTube tutorial, a screenshot someone posted in chat: if you can see the words, you can copy them.
 
+**Get it:** `Recite.exe` from the [latest release](https://github.com/blancodagoat/recite/releases/latest), or `scoop bucket add blancodagoat https://github.com/blancodagoat/scoop-bucket` then `scoop install recite`.
+
 ## Why not the tools you already have?
 
 | | The catch | Recite |
