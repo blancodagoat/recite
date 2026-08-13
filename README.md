@@ -34,7 +34,7 @@ That's the entire app. Error dialogs that block selection, hardcoded subtitles, 
 | PowerToys Text Extractor | Installing a fifteen-tool suite for one feature | One exe, under a megabyte |
 | Capture2Text | Abandoned, bundles its own OCR models | Uses the OCR engine already inside Windows |
 
-Recite reads with the OCR that ships in Windows itself — the newer Snipping Tool model on Windows 11, the built-in engine everywhere else — in whatever languages you have installed, entirely offline. Nothing is bundled and nothing is sent anywhere.
+Recite reads with the OCR that ships in Windows itself (the newer Snipping Tool model on Windows 11, the built-in engine everywhere else) in whatever languages you have installed, entirely offline. Nothing is bundled and nothing is sent anywhere.
 
 <details>
 <summary><b>Details</b></summary>
@@ -45,10 +45,10 @@ Recite reads with the OCR that ships in Windows itself — the newer Snipping To
 - The selection overlay freezes the desktop first, so the overlay itself never ends up in the grab, and hovering highlights whole windows and individual panes for one-click capture.
 - Very large multi-monitor grabs are scaled down to the OCR engine's input limit rather than refused.
 - If the hotkey stops working while an admin app or game has focus, use *Restart as administrator* in the tray once; that's a Windows rule about elevated windows, not ours.
-- The app never phones home. The update check in the tray menu runs only when you click it — unless you opt in to "Notify about new versions", which asks GitHub a few times a day. If a grab fails, clicking the error balloon opens a prefilled GitHub issue in your browser (log tail included, usernames scrubbed) for you to review and submit — the app itself sends nothing.
+- The app never phones home. The update check in the tray menu runs only when you click it; the one opt-in exception is "Notify about new versions", which asks GitHub a few times a day, and on a scoop install turns updating into one balloon click. If a grab fails, clicking the error balloon opens a prefilled GitHub issue in your browser (log tail included, usernames scrubbed) for you to review and submit. The app itself sends nothing.
 - Config lives in `%APPDATA%\Recite\config.json`, and a small rolling log in the same folder records what the app did.
 - Requires Windows 10 2004 or later with at least one language pack (OCR comes with them).
-- On Windows 11, Recite uses the sharper OCR model that ships inside the Snipping Tool / Photos package (the one Snipping Tool's Text Actions use) — noticeably better on small text and code tokens. It loads the model out of the package on its own, with no download, and falls back to the built-in engine automatically wherever that package is absent. Set `useWindows11Ocr` to false in config to force the built-in engine.
+- On Windows 11, Recite uses the sharper OCR model that ships inside the Snipping Tool / Photos package (the one Snipping Tool's Text Actions use), which is noticeably better on small text and code tokens. It loads the model out of the package on its own, with no download, and falls back to the built-in engine automatically wherever that package is absent. Set `useWindows11Ocr` to false in config to force the built-in engine.
 
 </details>
 
